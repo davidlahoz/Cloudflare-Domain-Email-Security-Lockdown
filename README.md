@@ -32,11 +32,20 @@ Bulk domain email security lockdown tool that prevents email phishing and spoofi
 ./cf-lockdown.sh
 ```
 
+The script will:
+- Show a colorized interface with clear status messages
+- Prompt for confirmation before modifying existing DNS records
+- Create a timestamped log file (`cf-lockdown-YYYYMMDD-HHMMSS.log`) with all changes
+- Display a summary report of successful, failed, and skipped domains
+
 ## What it does
 
 - Sets SPF record to `v=spf1 -all` (hard fail)
 - Sets null MX record to prevent email delivery  
 - Sets DMARC policy to `v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s;` (strict rejection)
+- **Interactive prompts** - asks before overwriting existing DNS records
+- **Comprehensive logging** - saves detailed audit trail of all changes
+- **Smart detection** - skips records that are already correctly configured
 - Protects against email-based phishing and spoofing using your domains
 
 ## Requirements
@@ -49,6 +58,40 @@ Bulk domain email security lockdown tool that prevents email phishing and spoofi
 - `curl` and `jq` commands installed
 - Bash shell (Linux/Mac/WSL)
 - Windows users: Run `wsl --install` in PowerShell as admin, then restart. [Full WSL guide](https://docs.microsoft.com/en-us/windows/wsl/install)
+
+## Features
+
+### 🛡️ **Security**
+- **Triple protection**: SPF hard fail + Null MX + DMARC reject
+- Prevents email spoofing and phishing attacks using your unused domains
+
+### 🎨 **User Experience** 
+- **Colorized output** with emojis for clear status indication
+- **Interactive prompts** - never overwrites existing records without permission
+- **Smart detection** - automatically skips records that are already correct
+- **Detailed feedback** shows current vs desired DNS record values
+
+### 📊 **Reporting & Logging**
+- **Real-time summary** - shows successful, failed, and skipped domains
+- **Comprehensive audit log** - timestamped file with all DNS changes
+- **Change tracking** - logs previous and new values for all modifications
+- **Compliance ready** - detailed records for security audits
+
+### 📝 **Log File Contents**
+Each run creates a detailed log file with:
+- Timestamp for every action
+- Previous and new DNS record values  
+- User decisions (skipped/updated/created)
+- Zone lookup failures
+- Final summary statistics
+
+Example log entries:
+```
+2025-01-27 14:30:15 - example.com: PROCESSING STARTED
+2025-01-27 14:30:16 - example.com TXT: UPDATED - Previous: "v=spf1 include:_spf.google.com ~all" | New: v=spf1 -all
+2025-01-27 14:30:17 - example.com MX: CREATED - New: Priority 0: .
+2025-01-27 14:30:18 - _dmarc.example.com TXT: CREATED - New: v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s;
+```
 
 ## License
 
