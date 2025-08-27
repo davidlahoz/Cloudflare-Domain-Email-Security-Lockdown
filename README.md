@@ -40,3 +40,7 @@ Bulk domain email security lockdown tool that prevents email phishing and spoofi
 - `curl` and `jq` commands installed
 - Bash shell (Linux/Mac/WSL)
 - Windows users: Run `wsl --install` in PowerShell as admin, then restart. [Full WSL guide](https://docs.microsoft.com/en-us/windows/wsl/install)
+
+## License
+
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
