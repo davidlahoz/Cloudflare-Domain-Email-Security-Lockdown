@@ -65,7 +65,7 @@ delete_record() {
 prompt_user() {
   local prompt="$1"
   local response
-  echo -n "$prompt (y/N): "
+  printf "%b (y/N): " "$prompt"
   read -r response </dev/tty
   [[ "$response" =~ ^[Yy]$ ]]
 }
@@ -94,13 +94,16 @@ upsert_txt_spf() {
       return
     else
       # It's a TXT record for @, but not the correct value
-      echo -e "    ${YELLOW}⚠️  Existing TXT record for @ found:${NC}"
+      echo -e "\n${RED}================================================================${NC}"
+      echo -e "${RED}🚨🚨🚨          DESTRUCTIVE ACTION ALERT!          🚨🚨🚨${NC}"
+      echo -e "${RED}================================================================${NC}"
+      echo -e "${YELLOW}⚠️  EXISTING SPF/TXT RECORD WILL BE OVERWRITTEN!${NC}"
       echo -e "      Current: ${RED}$existing_content${NC}"
-      echo -e "      Desired: ${GREEN}v=spf1 -all${NC}"
-      if prompt_user "    Overwrite existing TXT record for @ with SPF?"; then
+      echo -e "      Will become: ${GREEN}v=spf1 -all${NC}"
+      echo -e "${RED}================================================================${NC}"
+      if prompt_user "    ${RED}🔥 CONFIRM: Overwrite existing TXT record? This cannot be undone!${NC}"; then
         echo -e "    ${YELLOW}🔄 Updating existing TXT record to SPF${NC}"
         local clean_content='"v=spf1 -all"'
-        jq -nc --arg type TXT --arg name "@" --arg content "$clean_content" --argjson ttl 1 '{type:$type,name:$name,content:$content,ttl:$ttl}' >&2
         if curl -fsS -X PUT "${auth_hdr[@]}" \
           --data "$(jq -nc --arg type TXT --arg name "@" --arg content "$clean_content" --argjson ttl 1 '{type:$type,name:$name,content:$content,ttl:$ttl}')" \
           "${API}/zones/${zone_id}/dns_records/${txt_record_id}" >/dev/null; then
@@ -123,7 +126,6 @@ upsert_txt_spf() {
   # No TXT record found, create new SPF record
   echo -e "    ${YELLOW}➕ Creating new SPF record${NC}"
   local clean_content='"v=spf1 -all"'
-  jq -nc --arg type TXT --arg name "@" --arg content "$clean_content" --argjson ttl 1 '{type:$type,name:$name,content:$content,ttl:$ttl}' >&2
   if curl -fsS -X POST "${auth_hdr[@]}" \
     --data "$(jq -nc --arg type TXT --arg name "@" --arg content "$clean_content" --argjson ttl 1 '{type:$type,name:$name,content:$content,ttl:$ttl}')" \
     "${API}/zones/${zone_id}/dns_records" >/dev/null; then
@@ -173,13 +175,17 @@ ensure_null_mx() {
   
   # If we have other MX records, ask user to delete them
   if [[ ${#other_mx_records[@]} -gt 0 ]]; then
-    echo -e "    ${YELLOW}⚠️  Found ${#other_mx_records[@]} existing MX record(s):${NC}"
+    echo -e "\n${RED}================================================================${NC}"
+    echo -e "${RED}🚨🚨🚨          DESTRUCTIVE ACTION ALERT!          🚨🚨🚨${NC}"
+    echo -e "${RED}================================================================${NC}"
+    echo -e "${YELLOW}⚠️  ${#other_mx_records[@]} EXISTING MX RECORD(S) WILL BE PERMANENTLY DELETED!${NC}"
     for record_info in "${other_mx_records[@]}"; do
       IFS=':' read -r record_id content priority <<< "$record_info"
-      echo -e "      ${RED}Priority $priority: $content${NC}"
+      echo -e "      ${RED}🗑️  DELETE: Priority $priority: $content${NC}"
     done
-    echo -e "      Desired: ${GREEN}Priority 0: . (null MX)${NC}"
-    if prompt_user "    Delete existing MX records and create null MX?"; then
+    echo -e "      ${GREEN}✅ CREATE: Priority 0: . (null MX)${NC}"
+    echo -e "${RED}================================================================${NC}"
+    if prompt_user "    ${RED}🔥 CONFIRM: Delete ALL existing MX records? This cannot be undone!${NC}"; then
       echo -e "    ${YELLOW}🗑️  Deleting existing MX records${NC}"
       for record_info in "${other_mx_records[@]}"; do
         IFS=':' read -r record_id content priority <<< "$record_info"
@@ -235,7 +241,6 @@ ensure_null_mx_old() {
       echo -e "      Desired: ${GREEN}Priority 0: . (null MX)${NC}"
       if prompt_user "    Overwrite existing MX record for @ with null MX?"; then
         echo -e "    ${YELLOW}🔄 Updating existing MX record to null MX${NC}"
-        jq -nc --arg type MX --arg name "@" --arg content "." --argjson priority 0 '{type:$type,name:$name,content:$content,priority:$priority,ttl:1}' >&2
         if curl -fsS -X PUT "${auth_hdr[@]}" \
           --data "$(jq -nc --arg type MX --arg name "@" --arg content "." --argjson priority 0 '{type:$type,name:$name,content:$content,priority:$priority,ttl:1}')" \
           "${API}/zones/${zone_id}/dns_records/${mx_record_id}" >/dev/null; then
@@ -257,7 +262,6 @@ ensure_null_mx_old() {
 
   # No MX record for @ found, create null MX
   echo -e "    ${YELLOW}➕ Creating null MX record${NC}"
-  jq -nc --arg type MX --arg name "@" --arg content "." --argjson priority 0 '{type:$type,name:$name,content:$content,priority:$priority,ttl:1}' >&2
   if curl -fsS -X POST "${auth_hdr[@]}" \
     --data "$(jq -nc --arg type MX --arg name "@" --arg content "." --argjson priority 0 '{type:$type,name:$name,content:$content,priority:$priority,ttl:1}')" \
     "${API}/zones/${zone_id}/dns_records" >/dev/null; then
@@ -301,14 +305,17 @@ upsert_dmarc() {
   fi
 
   if [[ "$found_dmarc" == "true" && -n "$found_dmarc_id" ]]; then
-    echo -e "    ${YELLOW}⚠️  Existing DMARC record found:${NC}"
+    echo -e "\n${RED}================================================================${NC}"
+    echo -e "${RED}🚨🚨🚨          DESTRUCTIVE ACTION ALERT!          🚨🚨🚨${NC}"
+    echo -e "${RED}================================================================${NC}"
+    echo -e "${YELLOW}⚠️  EXISTING DMARC POLICY WILL BE OVERWRITTEN WITH STRICT REJECT!${NC}"
     echo -e "      Current: ${RED}$found_dmarc_content${NC}"
-    echo -e "      Desired: ${GREEN}v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s;${NC}"
-    if prompt_user "    Overwrite existing DMARC record with strict policy?"; then
+    echo -e "      Will become: ${GREEN}v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s;${NC}"
+    echo -e "${YELLOW}      ⚠️  This will REJECT all unauthorized emails immediately!${NC}"
+    echo -e "${RED}================================================================${NC}"
+    if prompt_user "    ${RED}🔥 CONFIRM: Overwrite DMARC with strict reject policy? This cannot be undone!${NC}"; then
       echo -e "    ${YELLOW}🔄 Updating existing DMARC record${NC}"
-      echo "DEBUG Payload:" >&2
       local clean_dmarc='"v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s;"'
-      jq -nc --arg type TXT --arg name "$dmarc_name" --arg zone "$domain" --arg content "$clean_dmarc" --argjson ttl 1 '{type:$type,name:($name + "." + $zone),content:$content,ttl:$ttl}' >&2
       if curl -fsS -X PUT "${auth_hdr[@]}" \
         --data "$(jq -nc --arg type TXT --arg name "$dmarc_name" --arg zone "$domain" --arg content "$clean_dmarc" --argjson ttl 1 '{type:$type,name:($name + "." + $zone),content:$content,ttl:$ttl}')" \
         "${API}/zones/${zone_id}/dns_records/${found_dmarc_id}" >/dev/null; then
@@ -329,9 +336,7 @@ upsert_dmarc() {
 
   # No DMARC record found, create new
   echo -e "    ${YELLOW}➕ Creating DMARC record${NC}"
-  echo "DEBUG Payload:" >&2
   local clean_dmarc='"v=DMARC1; p=reject; sp=reject; adkim=s; aspf=s;"'
-  jq -nc --arg type TXT --arg name "$dmarc_name" --arg zone "$domain" --arg content "$clean_dmarc" --argjson ttl 1 '{type:$type,name:($name + "." + $zone),content:$content,ttl:$ttl}' >&2
   if curl -fsS -X POST "${auth_hdr[@]}" \
     --data "$(jq -nc --arg type TXT --arg name "$dmarc_name" --arg zone "$domain" --arg content "$clean_dmarc" --argjson ttl 1 '{type:$type,name:($name + "." + $zone),content:$content,ttl:$ttl}')" \
     "${API}/zones/${zone_id}/dns_records" >/dev/null; then
