@@ -3,6 +3,9 @@
 .env.local
 .env.*.local
 
+# Sensitive domain lists
+domains.txt
+
 # Claude Code
 .claude/
 
