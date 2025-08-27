@@ -4,12 +4,21 @@ Bulk domain email security lockdown tool that prevents email phishing and spoofi
 
 ## Setup
 
-1. Create `.env` file with your Cloudflare API token:
+1. **Get your Cloudflare API token:**
+   - Go to [Cloudflare Dashboard](https://dash.cloudflare.com/profile/api-tokens)
+   - Click "Create Token"
+   - Use "Custom token" template
+   - **Permissions:** Zone - DNS:Edit
+   - **Zone Resources:** Include - All zones (or specific zones)
+   - Click "Continue to summary" → "Create Token"
+   - Copy the token (you won't see it again!)
+
+2. Create `.env` file with your Cloudflare API token:
    ```
    CF_API_TOKEN=your_token_here
    ```
 
-2. Create `domains.txt` with one domain per line:
+3. Create `domains.txt` with one domain per line:
    ```
    example.com
    unused-domain.org
