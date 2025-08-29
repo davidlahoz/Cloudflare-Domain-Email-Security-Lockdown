@@ -1,4 +1,5 @@
 # Cloudflare Domain Email Security Lockdown
+![Shell](https://img.shields.io/badge/shell-bash-green)
 
 Bulk domain email security lockdown tool that prevents email phishing and spoofing attacks by automatically configuring SPF hard fail, null MX records, and DMARC rejection policies on unused Cloudflare-managed domains.
 
